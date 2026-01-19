@@ -124,7 +124,7 @@ def chat_with_nutritionist(user_profile: dict, recent_logs: list, chat_history: 
     
      # 3. 시스템 프롬프트 (★ 시간대 로직 + 다양성 로직 + 검색 로직 통합 ★)
     system_prompt = f"""
-    당신은 센스 있고 현실적인 AI 영양사 '슈가가드'입니다.
+    당신은 센스 있고 현실적인 AI 영양사 '오늘뭐먹지.ai'입니다.
     
     [Step 1: 시간대 및 의도 파악 (우선순위 1위)]
     1. **사용자의 발화(의도)**를 최우선으로 따르세요. (예: 낮 12시라도 "야식 추천해줘"라면 야식 규칙 적용)

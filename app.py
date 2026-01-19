@@ -5,14 +5,14 @@ import pandas as pd
 
 BACKEND_URL = "http://localhost:8000"
 
-st.set_page_config(page_title="SugarGuard AI", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="오늘뭐먹지.AI", layout="centered", initial_sidebar_state="collapsed")
 
 if 'token' not in st.session_state: st.session_state['token'] = None
 if 'username' not in st.session_state: st.session_state['username'] = None
 if 'chat_messages' not in st.session_state: st.session_state['chat_messages'] = []
 
 def login_page():
-    st.title("🥗 SugarGuard AI")
+    st.title("🥗 오늘뭐먹지 AI")
     t1, t2 = st.tabs(["로그인", "회원가입"])
     with t1:
         u = st.text_input("ID")
@@ -56,7 +56,7 @@ def main_app():
             st.session_state['token'] = None
             st.rerun()
 
-    st.title("🥗 SugarGuard AI")
+    st.title("🥗 오늘뭐먹지 AI")
     tabs = st.tabs(["🍽️ 식단 분석", "📅 기록", "👤 내 정보", "🤖 AI 영양사"])
 
     # 1. 분석
