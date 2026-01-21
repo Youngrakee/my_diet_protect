@@ -3,7 +3,8 @@ import streamlit as st
 import requests
 import pandas as pd
 
-BACKEND_URL = "http://localhost:8000"
+# BACKEND_URL = "http://localhost:8000"
+BACKEND_URL = "https://my-diet-protect.onrender.com"
 
 st.set_page_config(page_title="오늘뭐먹지.AI", layout="centered", initial_sidebar_state="collapsed")
 
