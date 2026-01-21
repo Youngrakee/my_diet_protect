@@ -9,3 +9,4 @@ python-dotenv
 pydantic
 passlib[bcrypt]
 python-jose
+bcrypt==3.2.0
