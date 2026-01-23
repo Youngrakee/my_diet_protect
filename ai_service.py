@@ -1,75 +1,64 @@
-# ai_service.py
-import base64
 import os
 import json
 import requests
-from openai import OpenAI
+import base64
+from datetime import datetime
 from dotenv import load_dotenv
-from datetime import datetime # [NEW] 시간 확인용
+import operator
+from typing import TypedDict, Annotated, List
+
+# OpenAI 및 LangChain 관련 임포트
+from openai import OpenAI
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
+from langchain_core.tools import tool
+from langgraph.graph import StateGraph, END
 
 load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 KAKAO_API_KEY = os.getenv("KAKAO_API_KEY")
 
-# --- 1. 카카오 API 검색 함수 ---
-def search_places_kakao(query: str, location: str = ""):
-    print(f"🚀 [Tool] 카카오 검색 실행: {location} {query}")
-    
+# 일반 OpenAI 클라이언트 (analyze_food용)
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+# =========================================================
+# 1. 도구(Tool) 정의 - LangChain @tool 데코레이터 사용
+# =========================================================
+@tool
+def search_restaurants(location: str, menu_keyword: str):
+    """
+    특정 지역의 식당이나 메뉴를 카카오맵에서 검색합니다.
+    location: 검색할 지역 (예: 강남역, 홍대)
+    menu_keyword: 검색할 메뉴 (예: 샐러드, 한식)
+    """
     if not KAKAO_API_KEY:
-        return json.dumps({"error": "KAKAO_API_KEY Missing"})
+        return "Error: 카카오 API 키가 없습니다."
 
     url = "https://dapi.kakao.com/v2/local/search/keyword.json"
     headers = {"Authorization": f"KakaoAK {KAKAO_API_KEY}"}
-    search_query = f"{location} {query}".strip()
+    query = f"{location} {menu_keyword}".strip()
     
     try:
-        response = requests.get(url, headers=headers, params={"query": search_query, "size": 5, "sort": "accuracy"})
+        response = requests.get(url, headers=headers, params={"query": query, "size": 3})
         if response.status_code == 200:
-            documents = response.json().get('documents', [])
-            if not documents:
-                return json.dumps({"info": "검색 결과 없음"})
+            docs = response.json().get('documents', [])
+            if not docs:
+                return "NOT_FOUND: 검색 결과가 없습니다."
             
+            # AI가 읽기 좋게 문자열로 요약해서 반환
             results = []
-            for doc in documents:
-                results.append({
-                    "name": doc['place_name'],
-                    "address": doc['road_address_name'],
-                    "url": doc['place_url'], # 카카오맵 링크
-                    "category": doc['category_name']
-                })
-            return json.dumps(results, ensure_ascii=False)
+            for doc in docs:
+                results.append(f"이름: {doc['place_name']}, URL: {doc['place_url']}, 카테고리: {doc['category_name']}")
+            return "\n".join(results)
         else:
-            return json.dumps({"error": f"API Error {response.status_code}"})
+            return f"API 호출 에러: {response.status_code}"
     except Exception as e:
-        return json.dumps({"error": str(e)})
+        return f"검색 중 에러 발생: {e}"
 
-# --- 2. OpenAI 도구 정의 ---
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "search_restaurants",
-            "description": "식당, 맛집 추천 요청 시 실제 장소를 검색합니다.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "검색할 지역 이름 (예: 강남역, 완정역)",
-                    },
-                    "menu_keyword": {
-                        "type": "string",
-                        "description": "검색할 메뉴 키워드 (구체적인 메뉴명보다는 '카테고리' 권장)",
-                    },
-                },
-                "required": ["location", "menu_keyword"],
-            },
-        },
-    }
-]
-
-# --- 3. 식단 분석 함수 (이미지/텍스트) ---
+# =========================================================
+# 2. 식단 분석 함수 (기존 코드 유지)
+# =========================================================
 ANALYSIS_PROMPT = """
 당신은 당뇨/다이어트 전문 영양사입니다. 입력된 음식을 분석하여 JSON으로 반환하세요.(한국어로 설명할것)
 포맷: {"food_name": "...", "blood_sugar_level": "...", "summary": "...", "action_guide": "...", "alternatives": "..."}
@@ -97,38 +86,31 @@ def analyze_food(text_input: str = None, image_bytes: bytes = None, user_profile
         print(f"Analyze Error: {e}")
         return {"food_name": "Error", "blood_sugar_level": "알 수 없음", "summary": "분석 실패"}
 
-# --- 4. 챗봇 함수 (맛집 검색 포함) ---
-def chat_with_nutritionist(user_profile: dict, recent_logs: list, chat_history: list):
+# =========================================================
+# 3. LangGraph 상태 및 노드 정의 
+# =========================================================
+class AgentState(TypedDict):
+    messages: Annotated[List, operator.add]
+    user_profile: dict
+    current_time: str
 
-    # 1. 현재 시간 (Default 기준점)
-    now = datetime.now()
-    current_time_str = now.strftime("%H시 %M분")
+# LangChain LLM 초기화
+llm = ChatOpenAI(model="gpt-4o", temperature=0.7)
+llm_with_tools = llm.bind_tools([search_restaurants])
 
-    # 2. 최근 식사 기록을 텍스트로 명확하게 정리
-    if recent_logs:
-        history_text = "\n".join([f"- {log['time']} 섭취: {log['desc']}" for log in recent_logs])
-    else:
-        history_text = "최근 기록 없음"
-
-    # 2. 컨텍스트 구성
-    context_text = f"""
-    [시스템 정보]
-    - 현재 서버 시간: {current_time_str}
-    [사용자 프로필]
-    - 당뇨 상태: {user_profile.get('diabetes_type', '정보 없음')}
-    - 목표: {user_profile.get('health_goal', '건강 관리')}
+def chatbot_node(state: AgentState):
+    """메인 챗봇 노드"""
+    profile = state["user_profile"]
+    now = state["current_time"]
     
-    [최근 식사 기록 (매우 중요)]
-    {history_text}
-    """
-    
-     # 3. 시스템 프롬프트 (★ 시간대 로직 + 다양성 로직 + 검색 로직 통합 ★)
-    system_prompt = f"""
+    system_msg = f"""
     당신은 센스 있고 현실적인 AI 영양사 '오늘뭐먹지.ai'입니다.
+    현재 시간: {now}
+    사용자 정보: [당뇨: {profile.get('diabetes_type', '정보 없음')}, 목표: {profile.get('health_goal', '건강 관리')}]
     
     [Step 1: 시간대 및 의도 파악 (우선순위 1위)]
     1. **사용자의 발화(의도)**를 최우선으로 따르세요. (예: 낮 12시라도 "야식 추천해줘"라면 야식 규칙 적용)
-    2. 언급이 없으면 [현재 시간]({current_time_str})을 기준으로 판단하세요.
+    2. 언급이 없으면 [현재 시간]을 기준으로 판단하세요.
     
     [Step 2: 메뉴 선정 규칙 (샐러드 봇 금지!)]
     - **아침**: 뇌를 깨우는 가벼운 탄수화물+단백질 (그릭요거트, 오트밀, 샌드위치).
@@ -149,60 +131,114 @@ def chat_with_nutritionist(user_profile: dict, recent_logs: list, chat_history: 
        - (X) '완정역 연어 스테이크' -> (O) '완정역 생선구이' 또는 '완정역 일식'
        - (X) '강남역 곤약 떡볶이' -> (O) '강남역 키토' 또는 '강남역 샐러드'
     3. 야식 질문에는 식당 검색보다는 '편의점 메뉴'나 '집에서 먹을 메뉴'를 제안하는 게 나을 수 있습니다.
-
+    
     [Step 4: 예외 처리]
     - 도구 결과가 "NOT_FOUND"라면 솔직하게 말하고, 주변에 있을 법한 다른 건강 메뉴(예: 서브웨이, 국밥집 등)를 대안으로 제시하세요.
+    - 도구 결과의 URL을 `[식당명](URL)` 형태로 링크를 거세요.
     """
-
-
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "system", "content": context_text}
-    ]
-    messages.extend(chat_history)
-
-    print("🤖 [AI] 식사 기록 분석 및 메뉴 선정 중...")
-
-    # 1차 호출
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=messages,
-        tools=tools,
-        tool_choice="auto",
-        temperature=0.7
-    )
     
-    response_message = response.choices[0].message
-    tool_calls = response_message.tool_calls
+    messages = [SystemMessage(content=system_msg)] + state["messages"]
+    response = llm_with_tools.invoke(messages)
+    return {"messages": [response]}
 
-    if tool_calls:
-        # 도구 사용 요청 처리
-        messages.append(response_message) # 대화 내역에 추가
+def tool_node(state: AgentState):
+    """도구 실행 노드"""
+    last_message = state["messages"][-1]
+    if not last_message.tool_calls:
+        return {}
 
-        for tool_call in tool_calls:
-            args = json.loads(tool_call.function.arguments)
-            print(f"🛠️ [AI 검색어] {args.get('location')} + {args.get('menu_keyword')}")
+    results = []
+    for tool_call in last_message.tool_calls:
+        if tool_call["name"] == "search_restaurants":
+            print(f"🛠️ [LangGraph] 도구 실행: {tool_call['args']}")
+            res = search_restaurants.invoke(tool_call["args"])
+            results.append(ToolMessage(tool_call_id=tool_call["id"], content=str(res)))
             
-            # 카카오 API 실행
-            search_result = search_places_kakao(
-                query=args.get("menu_keyword"),
-                location=args.get("location")
-            )
+    return {"messages": results}
+
+def safety_check_node(state: AgentState):
+    """(Self-Correction) 당뇨 환자 안전 검사 노드"""
+    last_message = state["messages"][-1]
+    profile = state["user_profile"]
+    
+    # 툴 호출이나 시스템 메시지면 건너뜀
+    if not isinstance(last_message, AIMessage) or last_message.tool_calls:
+        return {}
+
+    # 당뇨 환자일 때만 엄격하게 검사 (Self-Correction 동작)
+    if "당뇨" in str(profile.get('diabetes_type')):
+        checker_llm = ChatOpenAI(model="gpt-4o", temperature=0)
+        check_prompt = f"""
+        사용자는 '{profile.get('diabetes_type')}' 환자입니다.
+        AI 답변: "{last_message.content}"
+        
+        이 답변이 고당분/고탄수화물(비빔밥, 국밥, 짜장면, 케이크 등)을 '야식'으로 추천하거나,
+        혈당에 치명적인 음식을 '강력 추천'하고 있다면 "DANGER: [이유]"를 출력하세요.
+        안전하다면 "SAFE"를 출력하세요.
+        """
+        check_res = checker_llm.invoke([HumanMessage(content=check_prompt)])
+        
+        if check_res.content.startswith("DANGER"):
+            print(f"🚨 [LangGraph] 안전 검사 실패: {check_res.content}")
+            correction_msg = f"잠깐! 사용자는 당뇨 환자야. 방금 추천은 위험해. ({check_res.content}) 내용을 반영해서 더 안전한 메뉴로 다시 대답해."
+            return {"messages": [HumanMessage(content=correction_msg, name="safety_guard")]}
             
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "content": search_result
-            })
+    return {}
 
-        # 2차 호출 (결과를 보고 답변 생성)
-        second_response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
-            temperature=0.7
-        )
-        return second_response.choices[0].message.content
+# =========================================================
+# 4. 그래프 구성 (Workflow)
+# =========================================================
+workflow = StateGraph(AgentState)
 
-    else:
-        # 도구 사용 안 함 (위치 정보 없을 때 등)
-        return response_message.content
+workflow.add_node("chatbot", chatbot_node)
+workflow.add_node("tools", tool_node)
+workflow.add_node("safety_check", safety_check_node)
+
+workflow.set_entry_point("chatbot")
+
+def route_tools(state: AgentState):
+    if state["messages"][-1].tool_calls:
+        return "tools"
+    return "safety_check"
+
+workflow.add_conditional_edges("chatbot", route_tools, {"tools": "tools", "safety_check": "safety_check"})
+workflow.add_edge("tools", "chatbot")
+
+def route_safety(state: AgentState):
+    last_message = state["messages"][-1]
+    if isinstance(last_message, HumanMessage) and last_message.name == "safety_guard":
+        return "chatbot" # 다시 생성해!
+    return END
+
+workflow.add_conditional_edges("safety_check", route_safety, {"chatbot": "chatbot", END: END})
+
+app_graph = workflow.compile()
+
+# =========================================================
+# 5. 외부 호출용 Wrapper 함수
+# =========================================================
+def chat_with_nutritionist(user_profile: dict, recent_logs: list, chat_history: list):
+    
+    now_str = datetime.now().strftime("%H시 %M분")
+    
+    # 메시지 변환 (Dict -> LangChain Message)
+    lc_messages = []
+    for msg in chat_history:
+        if msg["role"] == "user": lc_messages.append(HumanMessage(content=msg["content"]))
+        elif msg["role"] == "assistant": lc_messages.append(AIMessage(content=msg["content"]))
+            
+    # 최근 기록 주입 (마지막 유저 메시지에 컨텍스트로 붙임)
+    if recent_logs:
+        log_text = "\n".join([f"- {l['time']} {l['desc']}" for l in recent_logs])
+        if lc_messages and isinstance(lc_messages[-1], HumanMessage):
+             lc_messages[-1].content += f"\n\n[참고: 최근 식사 기록]\n{log_text}"
+    
+    inputs = {
+        "messages": lc_messages,
+        "user_profile": user_profile,
+        "current_time": now_str
+    }
+    
+    # 그래프 실행
+    result = app_graph.invoke(inputs)
+    return result["messages"][-1].content

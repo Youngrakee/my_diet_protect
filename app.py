@@ -127,10 +127,10 @@ def main_app():
                     with col1:
                         gender = st.selectbox("성별", ["남성", "여성"], 
                                               index=0 if p_data.get('gender') == "남성" else 1)
-                        height = st.number_input("키 (cm)", value=p_data.get('height') or 170.0)
+                        height = st.number_input("키 (cm)", value=p_data.get('height') or 170)
                     with col2:
                         age = st.number_input("나이", value=p_data.get('age') or 30)
-                        weight = st.number_input("몸무게 (kg)", value=p_data.get('weight') or 70.0)
+                        weight = st.number_input("몸무게 (kg)", value=p_data.get('weight') or 70)
                     
                     st.divider()
 
