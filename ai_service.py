@@ -61,7 +61,20 @@ def search_restaurants(location: str, menu_keyword: str):
 # =========================================================
 ANALYSIS_PROMPT = """
 당신은 당뇨/다이어트 전문 영양사입니다. 입력된 음식을 분석하여 JSON으로 반환하세요.(한국어로 설명할것)
-포맷: {"food_name": "...", "blood_sugar_level": "...", "summary": "...", "action_guide": "...", "alternatives": "..."}
+칼로리보다는 영양 성분의 균형(단탄지 비율)과 혈당 영향에 집중하세요.
+
+포맷: 
+{
+  "food_name": "...", 
+  "blood_sugar_impact": "낮음/보통/높음/매우 높음", 
+  "carbs_ratio": 40, (단위: %, 숫자만)
+  "protein_ratio": 30, (단위: %, 숫자만)
+  "fat_ratio": 30, (단위: %, 숫자만)
+  "summary": "전반적인 영양 분석 요약", 
+  "action_guide": "간단한 한 줄 가이드",
+  "detailed_action_guide": "식사 직후 권장되는 구체적인 행동 (예: 15분 산책, 물 2컵 등)",
+  "alternatives": "추천 대안 음식"
+}
 """
 
 def analyze_food(text_input: str = None, image_bytes: bytes = None, user_profile: dict = None):

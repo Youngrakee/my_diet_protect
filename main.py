@@ -105,9 +105,13 @@ async def analyze_endpoint(
     log = FoodLog(
         input_type="image" if file else "text",
         food_description=result.get("food_name", text or "Unknown"),
-        blood_sugar_impact=result.get("blood_sugar_level"),
+        blood_sugar_impact=result.get("blood_sugar_impact"),
+        carbs_ratio=result.get("carbs_ratio"),
+        protein_ratio=result.get("protein_ratio"),
+        fat_ratio=result.get("fat_ratio"),
         summary=result.get("summary"),
         action_guide=result.get("action_guide"),
+        detailed_action_guide=result.get("detailed_action_guide"),
         alternatives=result.get("alternatives"),
         owner_id=user.id
     )

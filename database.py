@@ -49,6 +49,10 @@ class FoodLog(Base):
     blood_sugar_impact = Column(String)
     summary = Column(Text)
     action_guide = Column(Text)
+    detailed_action_guide = Column(Text)  # [NEW] 상세 행동 가이드
+    carbs_ratio = Column(Float)           # [NEW] 탄수화물 비율
+    protein_ratio = Column(Float)         # [NEW] 단백질 비율
+    fat_ratio = Column(Float)             # [NEW] 지방 비율
     alternatives = Column(Text)
     owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="logs")
