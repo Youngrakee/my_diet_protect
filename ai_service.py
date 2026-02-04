@@ -165,7 +165,7 @@ def tool_node(state: AgentState):
     """도구 실행 노드"""
     last_message = state["messages"][-1]
     if not last_message.tool_calls:
-        return {}
+        return {"messages": []}
 
     results = []
     for tool_call in last_message.tool_calls:
@@ -183,7 +183,7 @@ def safety_check_node(state: AgentState):
     
     # 툴 호출이나 시스템 메시지면 건너뜀
     if not isinstance(last_message, AIMessage) or last_message.tool_calls:
-        return {}
+        return {"messages": []}
 
     # 당뇨 환자일 때만 엄격하게 검사 (Self-Correction 동작)
     if "당뇨" in str(profile.get('diabetes_type')):
@@ -203,7 +203,7 @@ def safety_check_node(state: AgentState):
             correction_msg = f"잠깐! 사용자는 당뇨 환자야. 방금 추천은 위험해. ({check_res.content}) 내용을 반영해서 더 안전한 메뉴로 다시 대답해."
             return {"messages": [HumanMessage(content=correction_msg, name="safety_guard")]}
             
-    return {}
+    return {"messages": []}
 
 # =========================================================
 # 4. 그래프 구성 (Workflow)
