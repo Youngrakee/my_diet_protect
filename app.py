@@ -174,30 +174,30 @@ def main_app():
                         data = {"text": t} if t else {}
                         try:
                             res = requests.post(f"{BACKEND_URL}/analyze", files=files, data=data, headers=headers)
-                        if res.status_code == 200:
-                            r = res.json()
-                            st.success("완료!")
-                            
-                            # 혈당 임팩트 색상 지정
-                            impact_map = {"낮음": "🟢", "보통": "🟡", "높음": "🟠", "매우 높음": "🔴"}
-                            impact_icon = impact_map.get(r.get('blood_sugar_impact'), "❓")
-                            
-                            st.markdown(f"### {r['food_name']} {impact_icon} {r.get('blood_sugar_impact', '')}")
-                            
-                            # 단탄지 비율 표시
-                            c1, c2, c3 = st.columns(3)
-                            c1.metric("탄수화물", f"{r.get('carbs_ratio', 0)}%")
-                            c2.metric("단백질", f"{r.get('protein_ratio', 0)}%")
-                            c3.metric("지방", f"{r.get('fat_ratio', 0)}%")
-                            
-                            st.info(r['summary'])
-                            
-                            with st.expander("✅ 식후 상세 행동 가이드", expanded=True):
-                                st.write(r.get('detailed_action_guide', '가이드 정보가 없습니다.'))
-                            
-                            st.write(f"💡 **한줄평:** {r['action_guide']}")
-                        else: st.error("실패")
-                    except Exception as e: st.error(f"에러: {e}")
+                            if res.status_code == 200:
+                                r = res.json()
+                                st.success("완료!")
+                                
+                                # 혈당 임팩트 색상 지정
+                                impact_map = {"낮음": "🟢", "보통": "🟡", "높음": "🟠", "매우 높음": "🔴"}
+                                impact_icon = impact_map.get(r.get('blood_sugar_impact'), "❓")
+                                
+                                st.markdown(f"### {r['food_name']} {impact_icon} {r.get('blood_sugar_impact', '')}")
+                                
+                                # 단탄지 비율 표시
+                                c1, c2, c3 = st.columns(3)
+                                c1.metric("탄수화물", f"{r.get('carbs_ratio', 0)}%")
+                                c2.metric("단백질", f"{r.get('protein_ratio', 0)}%")
+                                c3.metric("지방", f"{r.get('fat_ratio', 0)}%")
+                                
+                                st.info(r['summary'])
+                                
+                                with st.expander("✅ 식후 상세 행동 가이드", expanded=True):
+                                    st.write(r.get('detailed_action_guide', '가이드 정보가 없습니다.'))
+                                
+                                st.write(f"💡 **한줄평:** {r['action_guide']}")
+                            else: st.error("실패")
+                        except Exception as e: st.error(f"에러: {e}")
 
         # 2. 기록
         with tabs[1]:
