@@ -8,7 +8,7 @@ import pytz
 KST = pytz.timezone('Asia/Seoul')
 
 def get_kst_now():
-    return datetime.now(KST)
+    return datetime.now(KST).replace(tzinfo=None)
 import os
 from dotenv import load_dotenv
 
