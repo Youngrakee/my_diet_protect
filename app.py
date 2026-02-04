@@ -160,7 +160,7 @@ def main_app():
 
         # 1. 분석
         with tabs[0]:
-            mode = st.radio("입력", ["사진", "텍스트"], horizontal=True)
+            mode = st.radio("입력", ["텍스트", "사진"], horizontal=True)
             f, t = None, None
             if mode == "사진": f = st.file_uploader("이미지", type=["jpg","png"])
             else: t = st.text_area("내용")
