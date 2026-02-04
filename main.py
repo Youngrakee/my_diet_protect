@@ -231,11 +231,16 @@ def get_sugar_logs(db: Session = Depends(get_db), user: User = Depends(get_curre
 @app.post("/chat")
 def chat_endpoint(req: ChatRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     print(f"💬 [Chat] New message from {user.username}")
-    profile = {"diabetes_type": user.diabetes_type, "health_goal": user.health_goal}
+    profile = {
+        "diabetes_type": user.diabetes_type or "정보 없음", 
+        "health_goal": user.health_goal or "일반 건강 관리"
+    }
     
     # 최근 24시간 기록
     recent = db.query(FoodLog).filter(FoodLog.owner_id == user.id).order_by(FoodLog.created_at.desc()).limit(5).all()
     logs = [{"time": l.created_at.strftime("%H:%M"), "desc": l.food_description} for l in recent]
+    print(f"📄 [Chat] Recent logs found: {len(logs)} items")
+    if logs: print(f"   -> Latest: {logs[0]['desc']}")
     
     hist = [{"role": m.role, "content": m.content} for m in req.messages]
     
