@@ -166,11 +166,14 @@ def main_app():
             else: t = st.text_area("내용")
             
             if st.button("분석 시작"):
-                with st.spinner("AI 분석 중..."):
-                    files = {"file": (f.name, f.getvalue(), f.type)} if f else {}
-                    data = {"text": t} if t else {}
-                    try:
-                        res = requests.post(f"{BACKEND_URL}/analyze", files=files, data=data, headers=headers)
+                if not f and not t:
+                    st.warning("⚠️ 분석할 식단 사진을 업로드하거나 내용을 입력해 주세요.")
+                else:
+                    with st.spinner("AI 분석 중..."):
+                        files = {"file": (f.name, f.getvalue(), f.type)} if f else {}
+                        data = {"text": t} if t else {}
+                        try:
+                            res = requests.post(f"{BACKEND_URL}/analyze", files=files, data=data, headers=headers)
                         if res.status_code == 200:
                             r = res.json()
                             st.success("완료!")

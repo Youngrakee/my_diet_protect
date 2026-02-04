@@ -3,6 +3,12 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
+import pytz
+
+KST = pytz.timezone('Asia/Seoul')
+
+def get_kst_now():
+    return datetime.now(KST)
 import os
 from dotenv import load_dotenv
 
@@ -51,7 +57,7 @@ class User(Base):
 class FoodLog(Base):
     __tablename__ = "food_logs"
     id = Column(Integer, primary_key=True, index=True)
-    created_at = Column(DateTime, default=datetime.now)
+    created_at = Column(DateTime, default=get_kst_now)
     input_type = Column(String)
     food_description = Column(String)
     blood_sugar_impact = Column(String)
@@ -68,7 +74,7 @@ class FoodLog(Base):
 class HealthLog(Base):
     __tablename__ = "health_logs"
     id = Column(Integer, primary_key=True, index=True)
-    created_at = Column(DateTime, default=datetime.now)
+    created_at = Column(DateTime, default=get_kst_now)
     sugar_level = Column(Integer)
     note = Column(String, nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"))

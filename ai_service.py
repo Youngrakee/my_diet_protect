@@ -3,8 +3,11 @@ import json
 import requests
 import base64
 from datetime import datetime
+import pytz
 from dotenv import load_dotenv
 import operator
+
+KST = pytz.timezone('Asia/Seoul')
 from typing import TypedDict, Annotated, List
 
 # OpenAI 및 LangChain 관련 임포트
@@ -239,7 +242,7 @@ app_graph = workflow.compile()
 # =========================================================
 def chat_with_nutritionist(user_profile: dict, recent_logs: list, chat_history: list):
     
-    now_str = datetime.now().strftime("%H시 %M분")
+    now_str = datetime.now(KST).strftime("%H시 %M분")
     
     # 메시지 변환 (Dict -> LangChain Message)
     lc_messages = []
