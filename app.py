@@ -28,6 +28,9 @@ def login_page():
                     st.rerun()
                 else: st.error("로그인 실패")
             except: st.warning("서버 연결 중입니다. 다시 한 번 눌러주세요.")
+        
+        st.write("---")
+        st.info("💡 **테스트용 데모 계정**\n- ID: `demo` / PW: `demo1234`\n\n누구나 자유롭게 체험해 보실 수 있습니다.")
     with t2:
         nu = st.text_input("New ID")
         np = st.text_input("New PW", type="password")

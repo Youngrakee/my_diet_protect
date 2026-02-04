@@ -12,6 +12,54 @@ from database import SessionLocal, init_db, FoodLog, User, HealthLog
 from ai_service import analyze_food, chat_with_nutritionist
 import uvicorn
 
+def ensure_demo_user():
+    db = SessionLocal()
+    try:
+        demo_user = db.query(User).filter(User.username == "demo").first()
+        if not demo_user:
+            demo_pw = pwd_context.hash("demo1234")
+            new_user = User(
+                username="demo", 
+                hashed_password=demo_pw,
+                gender="남성",
+                age=35,
+                height=175.0,
+                weight=75.0,
+                diabetes_type="제2형 당뇨",
+                activity_level="보통 (가벼운 운동)",
+                health_goal="혈당 안정"
+            )
+            db.add(new_user)
+            db.commit()
+            db.refresh(new_user)
+            
+            # 샘플 기록 추가
+            sample_logs = [
+                FoodLog(
+                    food_description="현미밥과 고등어 구이",
+                    blood_sugar_impact="낮음",
+                    carbs_ratio=45, protein_ratio=35, fat_ratio=20,
+                    summary="균형 잡힌 한식 식단입니다. 단백질과 식이섬유가 풍부하여 혈당 상승이 완만합니다.",
+                    action_guide="식후 10분 정도 가벼운 스트레칭을 추천합니다.",
+                    detailed_action_guide="고등어의 오메가-3와 현미의 식이섬유가 혈당 안정을 돕습니다. 식후 물 한 잔을 마셔주세요.",
+                    owner_id=new_user.id
+                ),
+                FoodLog(
+                    food_description="제육덮밥",
+                    blood_sugar_impact="높음",
+                    carbs_ratio=60, protein_ratio=20, fat_ratio=20,
+                    summary="탄수화물과 당분 함량이 높은 식단입니다.",
+                    action_guide="식후 20분 이상 빠른 걸음으로 산책하세요.",
+                    detailed_action_guide="양념의 설탕과 흰쌀밥이 혈당을 빠르게 올릴 수 있습니다. 다음 식사때는 채소를 먼저 드시는 '거꾸로 식사법'을 권장합니다.",
+                    owner_id=new_user.id
+                )
+            ]
+            db.add_all(sample_logs)
+            db.commit()
+            print("Successfully created demo user and sample data.")
+    finally:
+        db.close()
+
 # --- 설정 ---
 SECRET_KEY = "SECRET_KEY_TEST"
 ALGORITHM = "HS256"
@@ -22,6 +70,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 app = FastAPI()
 init_db()
+ensure_demo_user()
 
 # [UPDATE] 프로필 데이터 검증 모델 (구조 확장)
 class UserProfileUpdate(BaseModel):
