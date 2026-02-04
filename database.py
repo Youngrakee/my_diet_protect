@@ -3,11 +3,19 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime, 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
+import os
+from dotenv import load_dotenv
 
-# SQLite DB 파일 경로
-SQLALCHEMY_DATABASE_URL = "sqlite:///./diet_log.db"
+load_dotenv()
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+# DB 연결 경로 (환경 변수에서 가져오되, 없으면 SQLite 사용)
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./diet_log.db")
+
+# PostgreSQL의 경우 connect_args가 필요 없음
+if SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
+    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+else:
+    engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
