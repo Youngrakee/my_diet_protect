@@ -17,8 +17,15 @@ load_dotenv()
 # DB 연결 경로 (환경 변수에서 가져오되, 없으면 SQLite 사용)
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./diet_log.db")
 
+# SQLAlchemy 1.4+ 및 2.0에서는 'postgres://' 대신 'postgresql://'을 사용해야 함
+# 또한 명시적으로 'psycopg2' 드라이버를 지정하여 연결 시도
+if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+elif SQLALCHEMY_DATABASE_URL.startswith("postgresql://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+
 # PostgreSQL의 경우 connect_args가 필요 없음
-if SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
+if "postgresql" in SQLALCHEMY_DATABASE_URL:
     engine = create_engine(SQLALCHEMY_DATABASE_URL)
 else:
     engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
