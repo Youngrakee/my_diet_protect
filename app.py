@@ -242,11 +242,17 @@ def main_app():
                 
                 with st.chat_message("assistant"):
                     try:
-                        res = requests.post(f"{BACKEND_URL}/chat", json={"messages":st.session_state.chat_messages}, headers=headers)
-                        reply = res.json()['reply']
-                        st.write(reply)
-                        st.session_state.chat_messages.append({"role":"assistant", "content":reply})
-                    except: st.error("통신 에러")
+                        res = requests.post(f"{BACKEND_URL}/chat", json={"messages":st.session_state.chat_messages}, headers=headers, timeout=60)
+                        if res.status_code == 200:
+                            reply = res.json()['reply']
+                            st.write(reply)
+                            st.session_state.chat_messages.append({"role":"assistant", "content":reply})
+                        else:
+                            st.error(f"서버 오류 ({res.status_code}): {res.text}")
+                    except requests.exceptions.Timeout:
+                        st.error("⌛ 요청 시간이 초과되었습니다. AI가 답변을 생성하는 데 시간이 너무 오래 걸리고 있습니다. 잠시 후 다시 시도해 주세요.")
+                    except Exception as e:
+                        st.error(f"⚠️ 통신 에러: {type(e).__name__} - {e}")
 
 if st.session_state['token']: main_app()
 else: login_page()

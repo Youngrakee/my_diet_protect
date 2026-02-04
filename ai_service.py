@@ -113,9 +113,11 @@ llm_with_tools = llm.bind_tools([search_restaurants])
 
 def chatbot_node(state: AgentState):
     """메인 챗봇 노드"""
+    print("🤖 [LangGraph] Chatbot node started")
     profile = state["user_profile"]
     now = state["current_time"]
     
+    # ... (시스템 메시지 생략 - 실제로는 그대로 유지되어야 함)
     system_msg = f"""
     당신은 센스 있고 현실적인 AI 영양사 '오늘뭐먹지.ai'입니다.
     현재 시간: {now}
@@ -151,8 +153,13 @@ def chatbot_node(state: AgentState):
     """
     
     messages = [SystemMessage(content=system_msg)] + state["messages"]
-    response = llm_with_tools.invoke(messages)
-    return {"messages": [response]}
+    try:
+        response = llm_with_tools.invoke(messages)
+        print("🤖 [LangGraph] Chatbot response generated")
+        return {"messages": [response]}
+    except Exception as e:
+        print(f"❌ [LangGraph] Error in chatbot_node: {e}")
+        raise e
 
 def tool_node(state: AgentState):
     """도구 실행 노드"""

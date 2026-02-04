@@ -230,6 +230,7 @@ def get_sugar_logs(db: Session = Depends(get_db), user: User = Depends(get_curre
 
 @app.post("/chat")
 def chat_endpoint(req: ChatRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    print(f"💬 [Chat] New message from {user.username}")
     profile = {"diabetes_type": user.diabetes_type, "health_goal": user.health_goal}
     
     # 최근 24시간 기록
@@ -237,8 +238,14 @@ def chat_endpoint(req: ChatRequest, db: Session = Depends(get_db), user: User = 
     logs = [{"time": l.created_at.strftime("%H:%M"), "desc": l.food_description} for l in recent]
     
     hist = [{"role": m.role, "content": m.content} for m in req.messages]
-    reply = chat_with_nutritionist(profile, logs, hist)
-    return {"reply": reply}
+    
+    try:
+        reply = chat_with_nutritionist(profile, logs, hist)
+        print(f"✅ [Chat] Reply generated for {user.username}")
+        return {"reply": reply}
+    except Exception as e:
+        print(f"❌ [Chat] Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
