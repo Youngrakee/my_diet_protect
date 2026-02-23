@@ -12,7 +12,7 @@ def get_kst_now():
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 # DB 연결 경로 (환경 변수에서 가져오되, 없으면 SQLite 사용)
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./diet_log.db")

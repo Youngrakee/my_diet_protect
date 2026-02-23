@@ -1,15 +1,9 @@
 flask
-fastapi
-uvicorn
-streamlit
 sqlalchemy
 openai
-python-multipart
 requests
 python-dotenv
-pydantic
 passlib[bcrypt]
-python-jose
 bcrypt==3.2.0
 langchain==0.2.10
 langchain-openai==0.1.22
@@ -17,3 +11,4 @@ langgraph==0.2.35
 langchain-community
 psycopg2-binary
 pytz
+gunicorn
