@@ -75,6 +75,7 @@ class FoodLog(Base):
     protein_ratio = Column(Float)         # [NEW] 단백질 비율
     fat_ratio = Column(Float)             # [NEW] 지방 비율
     alternatives = Column(Text)
+    image_path = Column(String, nullable=True) # [NEW] 이미지 경로
     owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="logs")
 

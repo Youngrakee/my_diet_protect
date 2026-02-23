@@ -1,0 +1,101 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="tabs">
+    <button class="tab-btn active" onclick="showTab('analyze')">🍽️ 분석</button>
+    <button class="tab-btn" onclick="showTab('history')">📅 기록</button>
+    <button class="tab-btn" onclick="showTab('chat')">🤖 AI 영양사</button>
+</div>
+
+<!-- 1. 분석 탭 -->
+<div id="analyze" class="tab-content active">
+    <div id="profile-reminder" class="hidden" style="margin-bottom: 1.5rem;">
+        <div class="card"
+            style="background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2); border-left: 4px solid var(--warning);">
+            <p style="font-size: 0.875rem; color: var(--warning); margin-bottom: 0.5rem;">👋 반가워요! 정확한 AI 분석을 위해 먼저 건강
+                정보를 입력해 주세요.</p>
+            <a href="{{ url_for('profile') }}" class="btn-primary"
+                style="padding: 0.4rem 0.8rem; font-size: 0.75rem; width: auto; display: inline-block; text-decoration: none;">정보
+                입력하러 가기</a>
+        </div>
+    </div>
+
+    <form id="analyze-form" enctype="multipart/form-data">
+        <div class="card">
+            <div class="input-mode">
+                <label class="radio-label">
+                    <input type="radio" name="mode" value="text" checked onchange="toggleMode()"> 텍스트
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="mode" value="image" onchange="toggleMode()"> 사진
+                </label>
+            </div>
+
+            <div id="text-input-group" class="form-group">
+                <textarea name="text" rows="4" placeholder="오늘 드신 음식을 입력해 주세요 (예: 점심으로 김치찌개랑 밥 한 공기 먹었어)"></textarea>
+            </div>
+
+            <div id="image-input-group" class="form-group hidden">
+                <input type="file" name="file" accept="image/*">
+            </div>
+
+            <button type="submit" class="btn-primary" id="analyze-btn">분석 시작</button>
+        </div>
+    </form>
+
+    <div id="analysis-loading" class="hidden">
+        <div class="spinner"></div>
+        <p style="text-align: center; margin-top: 1rem;">AI가 식단을 분석하고 있습니다...</p>
+    </div>
+
+    <div id="analysis-result" class="hidden">
+        <!-- 결과가 여기에 동적으로 삽입됩니다 -->
+    </div>
+</div>
+
+<!-- 2. 기록 탭 -->
+<div id="history" class="tab-content">
+    <div class="card" id="trend-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h4 style="font-size: 0.875rem;">📈 혈당 데이터 분석</h4>
+            <div class="radio-group" style="scale: 0.8;">
+                <label class="radio-label"><input type="radio" name="chart-type" value="impact" checked
+                        onchange="initChart()"> 식단</label>
+                <label class="radio-label"><input type="radio" name="chart-type" value="sugar" onchange="initChart()">
+                    수치</label>
+            </div>
+        </div>
+        <canvas id="impactChart" height="150"></canvas>
+    </div>
+
+    <div class="card">
+        <h4 style="margin-bottom: 1rem; font-size: 0.875rem;">🩸 혈당 직접 기록</h4>
+        <div style="display: flex; gap: 0.5rem;">
+            <input type="number" id="sugar-level-input" placeholder="수치 (mg/dL)" style="flex: 2;">
+            <input type="text" id="sugar-note-input" placeholder="메모 (예: 공복)" style="flex: 3;">
+            <button class="btn-primary" style="width: auto; padding: 0.5rem 1rem;" onclick="logSugar()">저장</button>
+        </div>
+    </div>
+
+    <div id="history-list" class="card" style="padding: 0;">
+        <p style="text-align: center; color: var(--text-muted); padding: 2rem;">기록을 불러오는 중...</p>
+    </div>
+</div>
+
+<!-- 3. 채팅 탭 -->
+<div id="chat" class="tab-content">
+    <div class="card" id="chat-container">
+        <div id="chat-messages">
+            <div class="message assistant">안녕하세요! 맛집 추천이나 식단 고민이 있으신가요?</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="메시지를 입력하세요...">
+            <button class="btn-primary" style="width: auto; padding: 0.5rem 1rem;" onclick="sendMessage()">전송</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+{% endblock %}

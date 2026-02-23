@@ -1,0 +1,86 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="header-content" style="margin-bottom: 1.5rem;">
+    <h2>👤 상세 프로필 설정</h2>
+</div>
+
+<p class="card" style="font-size: 0.875rem; color: var(--accent); background: rgba(56, 189, 248, 0.1); border: none;">
+    정확한 정보를 입력할수록 AI 분석이 정교해집니다.
+</p>
+
+<form action="{{ url_for('profile') }}" method="POST">
+    <div class="card">
+        <h3 style="font-size: 1rem; margin-bottom: 1.5rem;">1. 기본 정보</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label>성별</label>
+                <select name="gender">
+                    <option value="남성" {% if user.gender=='남성' %}selected{% endif %}>남성</option>
+                    <option value="여성" {% if user.gender=='여성' %}selected{% endif %}>여성</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>나이</label>
+                <input type="number" name="age" value="{{ user.age or 30 }}">
+            </div>
+            <div class="form-group">
+                <label>키 (cm)</label>
+                <input type="number" step="0.1" name="height" value="{{ user.height or 170.0 }}">
+            </div>
+            <div class="form-group">
+                <label>몸무게 (kg)</label>
+                <input type="number" step="0.1" name="weight" value="{{ user.weight or 70.0 }}">
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="font-size: 1rem; margin-bottom: 1.5rem;">2. 건강 상태</h3>
+        <div class="form-group">
+            <label>현재 당뇨 상태</label>
+            <div class="radio-group" style="flex-wrap: wrap;">
+                {% for opt in ["해당 없음", "당뇨 전단계", "제2형 당뇨", "제1형 당뇨"] %}
+                <label class="radio-label"
+                    style="background: var(--bg-dark); padding: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--border);">
+                    <input type="radio" name="diabetes_type" value="{{ opt }}" {% if user.diabetes_type==opt or (not
+                        user.diabetes_type and opt=='해당 없음' ) %}checked{% endif %}> {{ opt }}
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label>공복 혈당 (선택)</label>
+                <input type="number" name="fasting_sugar" value="{{ user.fasting_sugar or 0 }}" placeholder="모르면 0">
+            </div>
+            <div class="form-group">
+                <label>당화혈색소 HbA1c (선택)</label>
+                <input type="number" step="0.1" name="hba1c" value="{{ user.hba1c or 0.0 }}" placeholder="모르면 0">
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="font-size: 1rem; margin-bottom: 1.5rem;">3. 생활 패턴 및 목표</h3>
+        <div class="form-group">
+            <label>평소 활동량</label>
+            <select name="activity_level">
+                {% for opt in ["활동 적음 (앉아서 일함)", "보통 (가벼운 운동)", "활동 많음 (육체 노동/운동함)"] %}
+                <option value="{{ opt }}" {% if user.activity_level==opt %}selected{% endif %}>{{ opt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>관리 목표</label>
+            <select name="health_goal">
+                {% for opt in ["체중 감량", "혈당 안정", "현재 유지", "근육 증가"] %}
+                <option value="{{ opt }}" {% if user.health_goal==opt %}selected{% endif %}>{{ opt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <button type="submit" class="btn-primary" style="margin-bottom: 2rem;">💾 정보 저장하기</button>
+</form>
+{% endblock %}

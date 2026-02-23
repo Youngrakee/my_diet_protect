@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}오늘뭐먹지 AI{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.321.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for message in messages %}
+            <div class="flash-message">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <header>
+            <div class="header-content">
+                <h1>🥗 오늘뭐먹지 AI</h1>
+                {% if session.get('user_id') %}
+                <div class="user-menu">
+                    <span>{{ session.get('username') }}님</span>
+                    <a href="{{ url_for('logout') }}" class="btn-logout">로그아웃</a>
+                </div>
+                {% endif %}
+            </div>
+        </header>
+
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+
+        <nav class="mobile-nav">
+            <a href="{{ url_for('index', tab='analyze') }}" class="nav-item">
+                <i data-lucide="utensils"></i>
+                <span>분석</span>
+            </a>
+            <a href="{{ url_for('index', tab='history') }}" class="nav-item">
+                <i data-lucide="calendar"></i>
+                <span>기록</span>
+            </a>
+            <a href="{{ url_for('index', tab='chat') }}" class="nav-item">
+                <i data-lucide="bot"></i>
+                <span>AI 영양사</span>
+            </a>
+            <a href="{{ url_for('profile') }}" class="nav-item">
+                <i data-lucide="user"></i>
+                <span>내 정보</span>
+            </a>
+        </nav>
+    </div>
+    <script>
+        lucide.createIcons();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>
