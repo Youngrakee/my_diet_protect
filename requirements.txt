@@ -12,3 +12,5 @@ langchain-community
 psycopg2-binary
 pytz
 gunicorn
+fastapi
+uvicorn
